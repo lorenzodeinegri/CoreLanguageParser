@@ -35,16 +35,86 @@ parseScDef = do name <- parseVar
                 return (name, parameters, body)
 
 parseExpr :: Parser (Expr Name)
-parseExpr = do return (EVar "TODO")
+parseExpr = do symbol "let"
+               definitions <- some parseDefs
+               symbol "in"
+               expression <- parseExpr
+               return (ELet NonRecursive definitions expression)
+            <|>
+            do symbol "letrec"
+               definitions <- some parseDefs
+               symbol "in"
+               expression <- parseExpr
+               return (ELet Recursive definitions expression)
+            <|>
+            do symbol "case"
+               expression <- parseExpr
+               symbol "of"
+               alternatives <- some parseAlts
+               return (ECase expression alternatives)
+            <|>
+            do symbol "\\"
+               variables <- some parseVar
+               symbol "."
+               expression <- parseExpr
+               return (ELam variables expression)
+            <|>
+            do expression <- parseAExpr
+               return expression
 
 parseAExpr :: Parser (Expr Name)
-parseAExpr = do return (EVar "TODO")
+parseAExpr = do variable <- parseVar
+                return (EVar variable)
+             <|>
+             do number <- natural
+                return (ENum number)
+             <|>
+             do symbol "Pack{"
+                number1 <- natural
+                symbol ","
+                number2 <- natural
+                symbol "}"
+                return (EConstr number1 number2)
+             <|>
+             do symbol "("
+                expression <- parseExpr
+                symbol ")"
+                return expression
+
+parseDefs :: Parser (Def Name)
+parseDefs = do def <- parseDef
+               symbol ";"
+               return def
 
 parseDef :: Parser (Def Name)
-parseDef = do return ("TODO", EVar "TODO")
+parseDef = do variable <- parseVar
+              symbol "="
+              expression <- parseExpr
+              return (variable, expression)
+
+parseAlts :: Parser (Alter Name)
+parseAlts = do alt <- parseAlt
+               symbol ";"
+               return alt
 
 parseAlt :: Parser (Alter Name)
-parseAlt = do return (1, ["TODO"], EVar "TODO")
+parseAlt = do symbol "<"
+              number <- natural
+              symbol ">"
+              variables <- many parseVar
+              symbol "->"
+              expression <- parseExpr
+              return (number, variables, expression)
 
-parseVar :: Parser (String)
-parseVar = do return "TODO"
+parseVar :: Parser (Name)
+parseVar = do variable <- identifier
+              if isKeyword variable then empty else return variable
+              
+-- parseVar = do space
+--               first <- letter
+--               rest <- many (letter <|> digit <|> char '_')
+--               space
+--               if isKeyword (first:rest) then empty else return (first:rest)
+
+isKeyword :: String -> Bool
+isKeyword s = s == "let" || s == "letrec" || s == "case" || s == "Pack" || s == "of" || s == "if"
