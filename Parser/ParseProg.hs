@@ -10,7 +10,7 @@ type Def a     = (a, Expr a)
 type Alter a   = (Int, [a], Expr a)
 
 data IsRec     = NonRecursive | Recursive
-                 deriving Show
+                 deriving (Show, Eq)
 data Expr a    = EVar Name
                | ENum Int
                | EConstr Int Int
