@@ -25,7 +25,8 @@ parseProg = do function <- parseScDef
                do symbol ";"
                   functions <- parseProg
                   return (function:functions)
-                <|> return [function]
+                <|>
+                  return [function]
 
 parseScDef :: Parser (ScDef Name)
 parseScDef = do name <- parseVar
@@ -86,7 +87,8 @@ parseDefs = do def <- parseDef
                do symbol ";"
                   defs <- parseDefs
                   return (def:defs)
-                <|> return [def]
+                <|>
+                  return [def]
 
 parseDef :: Parser (Def Name)
 parseDef = do variable <- parseVar
@@ -99,7 +101,8 @@ parseAlts = do alt <- parseAlt
                do symbol ";"
                   alts <- parseAlts
                   return (alt:alts)
-                <|> return [alt]
+                <|>
+                  return [alt]
 
 parseAlt :: Parser (Alter Name)
 parseAlt = do symbol "<"
