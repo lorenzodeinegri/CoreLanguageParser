@@ -36,13 +36,13 @@ parseScDef = do name <- parseVar
 
 parseExpr :: Parser (Expr Name)
 parseExpr = do symbol "let"
-               definitions <- some parseDefs
+               definitions <- parseDefs
                symbol "in"
                expression <- parseExpr
                return (ELet NonRecursive definitions expression)
             <|>
             do symbol "letrec"
-               definitions <- some parseDefs
+               definitions <- parseDefs
                symbol "in"
                expression <- parseExpr
                return (ELet Recursive definitions expression)
@@ -50,7 +50,7 @@ parseExpr = do symbol "let"
             do symbol "case"
                expression <- parseExpr
                symbol "of"
-               alternatives <- some parseAlts
+               alternatives <- parseAlts
                return (ECase expression alternatives)
             <|>
             do symbol "\\"
@@ -81,10 +81,12 @@ parseAExpr = do variable <- parseVar
                 symbol ")"
                 return expression
 
-parseDefs :: Parser (Def Name)
+parseDefs :: Parser ([Def Name])
 parseDefs = do def <- parseDef
-               symbol ";"
-               return def
+               do symbol ";"
+                  defs <- parseDefs
+                  return (def:defs)
+                <|> return [def]
 
 parseDef :: Parser (Def Name)
 parseDef = do variable <- parseVar
@@ -92,10 +94,12 @@ parseDef = do variable <- parseVar
               expression <- parseExpr
               return (variable, expression)
 
-parseAlts :: Parser (Alter Name)
+parseAlts :: Parser ([Alter Name])
 parseAlts = do alt <- parseAlt
-               symbol ";"
-               return alt
+               do symbol ";"
+                  alts <- parseAlts
+                  return (alt:alts)
+                <|> return [alt]
 
 parseAlt :: Parser (Alter Name)
 parseAlt = do symbol "<"
@@ -107,14 +111,11 @@ parseAlt = do symbol "<"
               return (number, variables, expression)
 
 parseVar :: Parser (Name)
-parseVar = do variable <- identifier
-              if isKeyword variable then empty else return variable
-              
--- parseVar = do space
---               first <- letter
---               rest <- many (letter <|> digit <|> char '_')
---               space
---               if isKeyword (first:rest) then empty else return (first:rest)
+parseVar = do space
+              first <- letter
+              rest <- many (letter <|> digit <|> char '_')
+              space
+              if isKeyword (first:rest) then empty else return (first:rest)
 
 isKeyword :: String -> Bool
 isKeyword s = s == "let" || s == "letrec" || s == "case" || s == "Pack" || s == "of" || s == "if"
