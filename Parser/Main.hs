@@ -1,7 +1,7 @@
 module Main where
 
 import System.IO
-import Parser
+import Parse
 import ParseProg
 
 read_file :: String -> IO String

@@ -1,7 +1,7 @@
 module ParseProg where
 
 import Control.Applicative
-import Parser
+import Parse
 
 type Name      = String
 type Program a = [ScDef a]
