@@ -195,4 +195,4 @@ parseRelop = do op <- symbol "=="
                 return (EVar op)
 
 isKeyword :: String -> Bool
-isKeyword s = s == "let" || s == "letrec" || s == "case" || s == "Pack" || s == "of" || s == "if"
+isKeyword s = s == "let" || s == "letrec" || s == "case" || s == "Pack" || s == "of" || s == "in"
