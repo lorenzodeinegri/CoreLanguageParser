@@ -60,8 +60,63 @@ parseExpr = do symbol "let"
                expression <- parseExpr
                return (ELam variables expression)
             <|>
-            do expression <- parseAExpr
+            do expression <- parseExpr1
                return expression
+
+parseExpr1 :: Parser (Expr Name)
+parseExpr1 = do expr2 <- parseExpr2
+                do symbol "|"
+                   expr1 <- parseExpr1
+                   return (EAp (EAp (EVar "|") expr2) expr1)
+                 <|>
+                   return expr2
+
+parseExpr2 :: Parser (Expr Name)
+parseExpr2 = do expr3 <- parseExpr3
+                do symbol "&"
+                   expr2 <- parseExpr2
+                   return (EAp (EAp (EVar "&") expr3) expr2)
+                 <|>
+                   return expr3
+
+parseExpr3 :: Parser (Expr Name)
+parseExpr3 = do expr4 <- parseExpr4
+                do op <- parseRelop
+                   expr4' <- parseExpr4
+                   return (EAp (EAp op expr4) expr4')
+                 <|>
+                   return expr4
+
+parseExpr4 :: Parser (Expr Name)
+parseExpr4 = do expr5 <- parseExpr5
+                do symbol "+"
+                   expr4 <- parseExpr4
+                   return (EAp (EAp (EVar "+") expr5) expr4)
+                 <|>
+                   do symbol "-"
+                      expr5' <- parseExpr5
+                      return (EAp (EAp (EVar "-") expr5) expr5')
+                    <|>
+                      return expr5
+
+parseExpr5 :: Parser (Expr Name)
+parseExpr5 = do expr6 <- parseExpr6
+                do symbol "*"
+                   expr5 <- parseExpr5
+                   return (EAp (EAp (EVar "*") expr6) expr5)
+                 <|>
+                   do symbol "/"
+                      expr6' <- parseExpr6
+                      return (EAp (EAp (EVar "/") expr6) expr6')
+                    <|>
+                      return expr6
+
+parseExpr6 :: Parser (Expr Name)
+parseExpr6 = do first <- parseAExpr
+                do rest <- some parseAExpr
+                   return (foldl (EAp) first rest)
+                 <|>
+                   return first
 
 parseAExpr :: Parser (Expr Name)
 parseAExpr = do variable <- parseVar
@@ -119,6 +174,25 @@ parseVar = do space
               rest <- many (letter <|> digit <|> char '_')
               space
               if isKeyword (first:rest) then empty else return (first:rest)
+
+parseRelop :: Parser (Expr Name)
+parseRelop = do op <- symbol "=="
+                return (EVar op)
+             <|>
+             do op <- symbol "~="
+                return (EVar op)
+             <|>
+             do op <- symbol ">"
+                return (EVar op)
+             <|>
+             do op <- symbol ">="
+                return (EVar op)
+             <|>
+             do op <- symbol "<"
+                return (EVar op)
+             <|>
+             do op <- symbol "<="
+                return (EVar op)
 
 isKeyword :: String -> Bool
 isKeyword s = s == "let" || s == "letrec" || s == "case" || s == "Pack" || s == "of" || s == "if"
