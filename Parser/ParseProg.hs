@@ -65,17 +65,17 @@ parseExpr = do symbol "let"
 
 parseExpr1 :: Parser (Expr Name)
 parseExpr1 = do expr2 <- parseExpr2
-                do symbol "|"
+                do or <- parseOr
                    expr1 <- parseExpr1
-                   return (EAp (EAp (EVar "|") expr2) expr1)
+                   return (EAp (EAp or expr2) expr1)
                  <|>
                    return expr2
 
 parseExpr2 :: Parser (Expr Name)
 parseExpr2 = do expr3 <- parseExpr3
-                do symbol "&"
+                do and <- parseAnd
                    expr2 <- parseExpr2
-                   return (EAp (EAp (EVar "&") expr3) expr2)
+                   return (EAp (EAp and expr3) expr2)
                  <|>
                    return expr3
 
@@ -89,27 +89,27 @@ parseExpr3 = do expr4 <- parseExpr4
 
 parseExpr4 :: Parser (Expr Name)
 parseExpr4 = do expr5 <- parseExpr5
-                do symbol "+"
+                do add <- parseAdd
                    expr4 <- parseExpr4
-                   return (EAp (EAp (EVar "+") expr5) expr4)
-                 <|>
-                   do symbol "-"
+                   return (EAp (EAp add expr5) expr4)
+                   <|>
+                   do sub <- parseSub
                       expr5' <- parseExpr5
-                      return (EAp (EAp (EVar "-") expr5) expr5')
-                    <|>
-                      return expr5
+                      return (EAp (EAp sub expr5) expr5')
+                   <|>
+                   return expr5
 
 parseExpr5 :: Parser (Expr Name)
 parseExpr5 = do expr6 <- parseExpr6
-                do symbol "*"
+                do mul <- parseMul
                    expr5 <- parseExpr5
-                   return (EAp (EAp (EVar "*") expr6) expr5)
-                 <|>
-                   do symbol "/"
+                   return (EAp (EAp mul expr6) expr5)
+                   <|>
+                   do div <- parseDiv
                       expr6' <- parseExpr6
-                      return (EAp (EAp (EVar "/") expr6) expr6')
-                    <|>
-                      return expr6
+                      return (EAp (EAp div expr6) expr6')
+                   <|>
+                   return expr6
 
 parseExpr6 :: Parser (Expr Name)
 parseExpr6 = do first <- parseAExpr
@@ -175,23 +175,32 @@ parseVar = do space
               space
               if isKeyword (first:rest) then empty else return (first:rest)
 
+parseOr :: Parser (Expr Name)
+parseOr = do or <- symbol "|"
+             return (EVar or)
+
+parseAnd :: Parser (Expr Name)
+parseAnd = do and <- symbol "&"
+              return (EVar and)
+
+parseAdd :: Parser (Expr Name)
+parseAdd = do add <- symbol "+"
+              return (EVar add)
+
+parseSub :: Parser (Expr Name)
+parseSub = do sub <- symbol "-"
+              return (EVar sub)
+
+parseMul :: Parser (Expr Name)
+parseMul = do mul <- symbol "*"
+              return (EVar mul)
+
+parseDiv :: Parser (Expr Name)
+parseDiv = do div <- symbol "/"
+              return (EVar div)
+
 parseRelop :: Parser (Expr Name)
-parseRelop = do op <- symbol "=="
-                return (EVar op)
-             <|>
-             do op <- symbol "~="
-                return (EVar op)
-             <|>
-             do op <- symbol ">"
-                return (EVar op)
-             <|>
-             do op <- symbol ">="
-                return (EVar op)
-             <|>
-             do op <- symbol "<"
-                return (EVar op)
-             <|>
-             do op <- symbol "<="
+parseRelop = do op <- (symbol "==" <|> symbol "~=" <|> symbol ">" <|> symbol ">=" <|> symbol "<" <|> symbol "<=")
                 return (EVar op)
 
 isKeyword :: String -> Bool
