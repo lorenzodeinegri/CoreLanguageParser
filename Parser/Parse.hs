@@ -42,7 +42,7 @@ item :: Parser Char
 item = P (\inp -> case inp of
                     []     -> []
                     (x:xs) -> [(x, xs)])
-                     
+
 three :: Parser (Char, Char)
 three = do x <- item
            item

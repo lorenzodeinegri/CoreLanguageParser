@@ -3,22 +3,25 @@ module ParseProg where
 import Control.Applicative
 import Parse
 
-type Name      = String
-type Program a = [ScDef a]
-type ScDef a   = (Name, [a], Expr a)
-type Def a     = (a, Expr a)
-type Alter a   = (Int, [a], Expr a)
+type Name        = String
+type Program a   = [ScDef a]
+type ScDef a     = (Name, [a], Expr a)
+type Def a       = (a, Expr a)
+type Alter a     = (Int, [a], Expr a)
 
-data IsRec     = NonRecursive | Recursive
-                 deriving (Show, Eq)
-data Expr a    = EVar Name
-               | ENum Int
-               | EConstr Int Int
-               | EAp (Expr a) (Expr a)
-               | ELet IsRec [Def a] (Expr a)
-               | ECase (Expr a) [Alter a]
-               | ELam [a] (Expr a)
-                 deriving Show
+type CoreProgram = Program Name
+type CoreScDef   = ScDef Name
+
+data IsRec       = NonRecursive | Recursive
+                   deriving (Show, Eq)
+data Expr a      = EVar Name
+                 | ENum Int
+                 | EConstr Int Int
+                 | EAp (Expr a) (Expr a)
+                 | ELet IsRec [Def a] (Expr a)
+                 | ECase (Expr a) [Alter a]
+                 | ELam [a] (Expr a)
+                   deriving Show
 
 parseProg :: Parser (Program Name)
 parseProg = do function <- parseScDef
@@ -170,8 +173,8 @@ parseAlt = do symbol "<"
 
 parseVar :: Parser (Name)
 parseVar = do space
-              first <- letter
-              rest <- many (letter <|> digit <|> char '_')
+              first <- lower
+              rest <- many (alphanum <|> char '_')
               space
               if isKeyword (first:rest) then empty else return (first:rest)
 
